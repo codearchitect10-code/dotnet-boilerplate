@@ -1,0 +1,14 @@
+﻿using FluentValidation;
+
+namespace Framework.Core.Identity.Tokens;
+public record RefreshTokenCommand(string Token, string RefreshToken);
+
+public class RefreshTokenValidator : AbstractValidator<RefreshTokenCommand>
+{
+    public RefreshTokenValidator()
+    {
+        RuleFor(p => p.Token).Cascade(CascadeMode.Stop).NotEmpty();
+
+        RuleFor(p => p.RefreshToken).Cascade(CascadeMode.Stop).NotEmpty();
+    }
+}

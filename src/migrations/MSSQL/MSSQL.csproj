@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Identity\" />
+    <Folder Include="Masters\" />
+    <Folder Include="Application\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\framework\Infrastructure\Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,116 @@
+﻿using System.Reflection;
+using Asp.Versioning.Conventions;
+using FluentValidation;
+using Framework.Core.Origin;
+using Framework.Infrastructure.Auth;
+using Framework.Infrastructure.Exceptions;
+using Framework.Infrastructure.Identity;
+using Framework.Infrastructure.Logging.Serilog;
+using Framework.Infrastructure.OpenApi;
+using Framework.Infrastructure.Persistence;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
+using Framework.Core;
+using Framework.Infrastructure.Behaviours;
+using Framework.Infrastructure.RateLimit;
+using Framework.Infrastructure.Securityheaders;
+using Framework.Infrastructure.Cors;
+using Framework.Infrastructure.Auth.Jwt;
+using Framework.Infrastructure.Caching;
+using Framework.Infrastructure.Storage.Files;
+using Framework.Infrastructure.Mail;
+using Framework.Infrastructure.Jobs;
+using Framework.Infrastructure.Masters;
+using Framework.Infrastructure.Masters.Endpoints;
+
+namespace Framework.Infrastructure;
+
+public static class InfrastructureExtensions
+{
+    public static WebApplicationBuilder ConfigureFramework(this WebApplicationBuilder builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        // builder.AddServiceDefaults();
+        builder.ConfigureSerilog();
+        builder.ConfigureDatabase();
+        builder.Services.ConfigureIdentity();
+        builder.Services.ConfigureMaster();
+        builder.Services.AddCorsPolicy(builder.Configuration);
+        builder.Services.ConfigureFileStorage();
+        builder.Services.ConfigureJwtAuth();
+        builder.Services.ConfigureOpenApi();
+        builder.Services.ConfigureJobs(builder.Configuration);
+        builder.Services.ConfigureMailing();
+        builder.Services.ConfigureCaching(builder.Configuration);
+        builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+        builder.Services.AddProblemDetails();
+        builder.Services.AddHealthChecks();
+        builder.Services.AddOptions<OriginOptions>().BindConfiguration(nameof(OriginOptions));
+
+        // Define module assemblies
+        var assemblies = new Assembly[]
+        {
+            typeof(FrameworkCore).Assembly,
+            typeof(FrameworkInfrastructure).Assembly
+        };
+
+        // Register validators
+        builder.Services.AddValidatorsFromAssemblies(assemblies);
+
+        // Register MediatR
+        builder.Services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssemblies(assemblies);
+            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        });
+
+        builder.Services.ConfigureRateLimit(builder.Configuration);
+        builder.Services.ConfigureSecurityHeaders(builder.Configuration);
+
+        return builder;
+    }
+
+    public static WebApplication UseFramework(this WebApplication app)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+        //app.MapDefaultEndpoints();
+        app.UseRateLimit();
+        app.UseSecurityHeaders();
+        app.SetupDatabase();
+        app.UseExceptionHandler();
+        app.UseCorsPolicy();
+        app.UseOpenApi();
+        app.UseJobDashboard(app.Configuration);
+        app.UseRouting();
+        app.UseStaticFiles();
+        //app.UseStaticFiles(new StaticFileOptions()
+        //{
+        //    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "assets")),
+        //    RequestPath = new PathString("/assets")
+        //});
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+
+        // Current user middleware
+        app.UseMiddleware<CurrentUserMiddleware>();
+
+        // Register API versions
+        var versions = app.NewApiVersionSet()
+                    .HasApiVersion(1)
+                    .HasApiVersion(2)
+                    .ReportApiVersions()
+                    .Build();
+
+        // Map versioned endpoint
+        var appversion = app.MapGroup("api/v{version:apiVersion}").WithApiVersionSet(versions);
+
+        appversion.MapIdentityEndpoints();
+        appversion.MapMastersEndpoints();
+
+        return app;
+    }
+}

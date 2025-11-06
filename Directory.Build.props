@@ -1,0 +1,33 @@
+<Project>
+  <PropertyGroup>
+    <!-- .NET Target Framework -->
+    <TargetFramework>net9.0</TargetFramework>
+    
+    <!-- Treat Warnings as Errors -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    
+    <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+    
+    <!-- Generate XML Documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    
+    <!-- Implicit Usings (C# 10+) -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Nullable Reference Types -->
+    <Nullable>enable</Nullable>
+    
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    
+    <AnalysisLevel>latest</AnalysisLevel>
+    
+    <AnalysisMode>All</AnalysisMode>
+    
+    <ContainerImageTags>2.0.4-rc;latest</ContainerImageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" Condition="$(MSBuildProjectExtension) == '.csproj'" />
+  </ItemGroup>
+</Project>

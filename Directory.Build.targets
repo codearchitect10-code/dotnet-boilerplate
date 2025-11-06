@@ -1,0 +1,20 @@
+﻿<Project>
+  <PropertyGroup>
+    <!-- Define artifacts folder relative to each project -->
+    <ArtifactsRoot>$(MSBuildThisFileDirectory)_artifacts</ArtifactsRoot>
+  </PropertyGroup>
+
+  <Target Name="PostBuildSteps" AfterTargets="PostBuildEvent">
+    <Message Text="Running custom PostBuild step..." Importance="high" />
+
+    <Copy
+      SourceFiles="$(TargetPath)"
+      DestinationFolder="$(ArtifactsRoot)\$(MSBuildProjectName)"
+      SkipUnchangedFiles="true"
+    />
+  </Target>
+
+  <Target Name="PreBuildSteps" BeforeTargets="BeforeBuild">
+    <Message Text="Building $(MSBuildProjectName) at $(MSBuildProjectDirectory)" Importance="high" />
+  </Target>
+</Project>
